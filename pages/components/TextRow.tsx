@@ -1,5 +1,6 @@
 import { FC } from 'react'
 import { useRecoilValue } from 'recoil'
+
 import { rowAtom } from '../../atoms/RowAtom'
 import { wordOfTheDayAtom } from '../../atoms/WordOfTheDayAtom'
 import TextBox from './TextBox'
@@ -8,11 +9,11 @@ interface Props {
   rowIndex: number
 }
 
-const TextRow: FC<Props> = ({ rowIndex }) => {
-  const style = {
-    container: 'grid grid-cols-5 gap-2 my-2',
-  }
+const style = {
+  container: 'grid grid-cols-5 gap-2 my-2',
+}
 
+const TextRow: FC<Props> = ({ rowIndex }) => {
   const wordOfDay = useRecoilValue(wordOfTheDayAtom)
   const currentRow = useRecoilValue(rowAtom)
 

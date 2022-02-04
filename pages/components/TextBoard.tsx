@@ -1,50 +1,90 @@
-import { FC, useEffect, useState } from 'react'
-import randomWords from 'random-words'
+import { FC, useEffect } from 'react'
+import { useRecoilState, useSetRecoilState } from 'recoil'
+import { rword } from 'rword'
 
 import TextRow from './TextRow'
 import { userWordAtom } from '../../atoms/UserWordAtom'
-import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil'
 import { wordOfTheDayAtom } from '../../atoms/WordOfTheDayAtom'
 import { rowAtom } from '../../atoms/RowAtom'
+import {
+  progressAtom,
+  rowProgressAtom,
+  winningStateAtom,
+} from '../../atoms/userStatus'
+
+const style = {
+  container: 'grid grid-rows-6 grid-flow-col',
+  button:
+    'mt-8 cursor-pointer rounded-lg bg-green-700 py-2 px-4 text-2xl font-bold text-white disabled:opacity-50',
+}
 
 const TextBoard: FC = () => {
-  const style = {
-    container: 'grid grid-rows-6 grid-flow-col',
-    button:
-      'mt-8 cursor-pointer rounded-lg bg-green-700 py-2 px-4 text-2xl font-bold text-white disabled:opacity-50',
-  }
-
+  const wordLength = 5
   const setWordOfDay = useSetRecoilState(wordOfTheDayAtom)
-  const [generatedWord, setGeneratedWord] = useState('')
   const [currentUserWord, setCurrentUserWord] = useRecoilState(userWordAtom)
   const [currentRow, setCurrentRow] = useRecoilState(rowAtom)
+  const [winningState, setWinningState] = useRecoilState(winningStateAtom)
+  const [progress, setProgress] = useRecoilState(progressAtom)
+  const [rowProgress, setRowProgress] = useRecoilState(rowProgressAtom)
 
-  function generateWord() {
-    const wd = randomWords({ exactly: 1, maxLength: 5 })
-    return wd[0]
+  function generateWOT(len: number) {
+    const wd = rword.generate(1, { length: len })
+
+    localStorage.setItem('wordOfTheDay', wd.toString().replace(/"/g, ''))
+
+    const letterArray = wd
+      .toString()
+      .replace(/"/g, '')
+      .split('')
+      .map((letter, index) => ({ letter, index }))
+    setWordOfDay(letterArray)
   }
 
   function validateRow() {
     setCurrentRow(currentRow + 1)
-    setCurrentUserWord('')
+
+    const currentWord = currentUserWord
+      .map((letter: any) => letter.letter)
+      .join('')
+
+    if (
+      currentWord.toLowerCase() ===
+      localStorage.getItem('wordOfTheDay')?.toLowerCase()
+    ) {
+      setWinningState(true)
+    } else {
+      setCurrentUserWord('')
+    }
+  }
+
+  function saveProgress() {
+    const currRowProgress = [...rowProgress]
+    const tempProg = [...progress, currRowProgress]
+    localStorage.setItem('progress', JSON.stringify(tempProg))
+    setProgress(tempProg)
+    setRowProgress([])
   }
 
   useEffect(() => {
-    setGeneratedWord(generateWord())
+    if (
+      rowProgress.length === wordLength &&
+      progress.length === currentRow - 1
+    ) {
+      saveProgress()
+    }
+  }, [currentRow])
+
+  useEffect(() => {
+    if (currentRow === 0) {
+      generateWOT(wordLength)
+    }
   }, [])
 
   useEffect(() => {
-    if (generatedWord && generatedWord.length === 5) {
-      localStorage.setItem('wordOfTheDay', generatedWord)
-      setWordOfDay(
-        generatedWord
-          .split('')
-          .map((letter, index) => ({ letter: letter, index: index }))
-      )
-    } else {
-      generateWord()
+    if (winningState) {
+      alert('You won!')
     }
-  }, [generatedWord])
+  }, [winningState])
 
   return (
     <div>
@@ -54,7 +94,7 @@ const TextBoard: FC = () => {
       ))}
       <button
         className={style.button}
-        disabled={currentUserWord.length !== 5}
+        disabled={currentUserWord.length !== wordLength}
         onClick={validateRow}
       >
         Validate

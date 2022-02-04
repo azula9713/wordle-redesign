@@ -1,8 +1,18 @@
-import Head from 'next/head'
+import { useEffect } from 'react'
+import { useRecoilValue } from 'recoil'
+import { rowAtom } from '../atoms/RowAtom'
 import Header from './components/Header'
 import TextBoard from './components/TextBoard'
 
 export default function Home() {
+  const currentRow = useRecoilValue(rowAtom)
+
+  useEffect(() => {
+    if (currentRow === 0) {
+      localStorage.removeItem('progress')
+    }
+  }, [])
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-between overflow-hidden">
       <title>Wordle Redesign</title>
